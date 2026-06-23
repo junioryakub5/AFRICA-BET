@@ -1,0 +1,359 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables ───────────────────────────────────────────────────────── */
+:root {
+  --bg:          #09090b;
+  --bg-2:        #111117;
+  --bg-3:        #1a1a24;
+  --bg-4:        #22223a;
+  --border:      rgba(255,255,255,0.06);
+  --border-md:   rgba(255,255,255,0.1);
+  --border-lg:   rgba(255,255,255,0.15);
+
+  /* ── Pan-African palette (Africa Tips logo) ── */
+  --accent:        #D4A017;                   /* Gold — primary brand */
+  --accent-dim:    rgba(212,160,23,0.1);
+  --accent-glow:   rgba(212,160,23,0.25);
+  --accent-border: rgba(212,160,23,0.35);
+
+  --red-brand:     #CC1500;                   /* Red — secondary brand */
+  --red-brand-dim: rgba(204,21,0,0.1);
+  --red-brand-glow:rgba(204,21,0,0.25);
+
+  --green:         #2A7A2A;                   /* Green — success/win */
+  --green-dim:     rgba(42,122,42,0.08);
+  --green-glow:    rgba(42,122,42,0.2);
+
+  --red:           #ef4444;                   /* Error / loss states */
+  --amber:         #f59e0b;
+  --purple:        #a855f7;
+
+  --text-1:      #f4f4f5;
+  --text-2:      #a1a1aa;
+  --text-3:      #52525b;
+  --radius:      16px;
+}
+
+/* ─── Base Reset ──────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  ::selection { background: var(--accent-dim); color: var(--text-1); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-2); }
+  ::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-md); }
+}
+
+/* ─── Component Layer ─────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Layout */
+  .page-container {
+    @apply mx-auto w-full px-4 md:px-6;
+    max-width: 1200px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+  .card:hover {
+    border-color: var(--border-md);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+  .card-glass {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .card-glass:hover {
+    border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+    transform: translateY(-2px);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--red-brand), var(--accent));
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 6px 24px rgba(212,160,23,0.4);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-gold {
+    @apply btn-primary;
+  }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 24px;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-2);
+    background: transparent;
+    border: 1px solid var(--border-md);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-outline:hover {
+    color: var(--text-1);
+    border-color: var(--border-lg);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .btn-outline-gold {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 28px;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent-border);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-outline-gold:hover {
+    background: rgba(212,160,23,0.15);
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  /* ── Badges ── */
+  .badge-win {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Sora', sans-serif;
+    letter-spacing: 0.05em;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(42,122,42,0.2);
+  }
+  .badge-loss {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Sora', sans-serif;
+    letter-spacing: 0.05em;
+    color: var(--red);
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  /* ── Form fields ── */
+  .input-field {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-1);
+    background: var(--bg-3);
+    border: 1px solid var(--border-md);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .input-field::placeholder { color: var(--text-3); }
+  .input-field:focus {
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  /* Admin specific input */
+  .admin-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-1);
+    background: var(--bg-3);
+    border: 1px solid var(--border-md);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .admin-input::placeholder { color: var(--text-3); }
+  .admin-input:focus {
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 2px var(--accent-dim);
+  }
+
+  /* Admin card */
+  .admin-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* ── Nav links ── */
+  .nav-link {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+    color: var(--text-2);
+    text-decoration: none;
+    transition: color 0.15s;
+    position: relative;
+    padding-bottom: 2px;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: var(--accent);
+    border-radius: 99px;
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+  .nav-link:hover { color: var(--text-1); }
+  .nav-link:hover::after { transform: scaleX(1); }
+  .nav-link.active { color: var(--text-1); }
+  .nav-link.active::after { transform: scaleX(1); }
+
+  /* ── Typography ── */
+  .font-display { font-family: 'Sora', sans-serif; }
+  .font-brand   { font-family: 'Sora', sans-serif; }
+
+  .section-title {
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.75rem, 5vw, 3rem);
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+
+  /* ── Animations ── */
+  .animate-fadeInUp {
+    animation: fadeInUp 0.45s ease forwards;
+  }
+
+  /* ─── Admin-specific background ─────────────────────────────────── */
+  .bg-admin-bg { background: var(--bg); }
+}
+
+/* ─── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ─── Utility Classes ─────────────────────────────────────────────────────── */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Gradient text — Pan-African: red → gold → amber */
+.gradient-text {
+  background: linear-gradient(135deg, #CC1500 0%, #D4A017 55%, #F5C030 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glowing divider */
+.glow-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,160,23,0.45), transparent);
+}
