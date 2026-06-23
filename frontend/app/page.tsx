@@ -152,34 +152,17 @@ export default function HomePage() {
                 textTransform: "uppercase",
               }}
             >
-              YOU CAN&apos;T BE{" "}
+              AFRICA&apos;S SHARPEST{" "}
+              <br />
               <span style={{
-                background: "linear-gradient(135deg, #CC1500 0%, #D4A017 50%, #F5C030 100%)",
+                background: "linear-gradient(135deg, #CC1500 0%, #D4A017 55%, #F5C030 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
                 filter: "drop-shadow(0 0 30px rgba(212,160,23,0.4))",
                 display: "inline-block",
               }}>
-                UNLUCKY
-              </span>
-              <br />
-              <span style={{
-                fontSize: "clamp(1.6rem, 5.5vw, 4.2rem)",
-                color: "#a1a1aa",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-              }}>
-                FOR{" "}
-                <span style={{
-                    color: "#f4f4f5",
-                    fontWeight: 900,
-                    fontSize: "clamp(2.2rem, 7vw, 5.5rem)",
-                  }}
-                >
-                  {count}
-                </span>
-                {" "}DAYS
+                FOOTBALL TIPS
               </span>
             </h1>
 
@@ -195,8 +178,9 @@ export default function HomePage() {
                 fontWeight: 500,
               }}
             >
-              Expert-verified football tips. Unlock the slip, place the bet,{" "}
-              <span style={{ color: "#D4A017", fontWeight: 700 }}>collect the money.</span>
+              Researched. Verified. Profitable. Expert predictions curated before every kick-off —{
+              " "}
+              <span style={{ color: "#D4A017", fontWeight: 700 }}>unlock your slip and let the money talk.</span>
             </p>
 
             {/* Stats row */}
