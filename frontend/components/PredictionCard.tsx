@@ -276,19 +276,12 @@ function CountrySelectModal({
             </div>
           </button>
 
-          {/* Nigeria */}
-          <button
+
+          {/* Nigeria — temporarily disabled */}
+          {/* <button
             onClick={onNigeria}
             className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200 active:scale-[0.98]"
             style={{ background: "rgba(204,21,0,0.06)", border: "1px solid rgba(204,21,0,0.15)" }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(204,21,0,0.12)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(204,21,0,0.3)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(204,21,0,0.06)";
-              (e.currentTarget as HTMLElement).style.borderColor = "rgba(204,21,0,0.15)";
-            }}
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇳🇬</span>
@@ -297,10 +290,7 @@ function CountrySelectModal({
                 <p style={{ color: "#52525b", fontSize: "0.72rem", marginTop: "2px" }}>₦{ngn.toLocaleString()} · Telegram Payment</p>
               </div>
             </div>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(204,21,0,0.1)", border: "1px solid rgba(204,21,0,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CC1500" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-            </div>
-          </button>
+          </button> */}
         </div>
 
         {/* Cancel */}
@@ -1183,7 +1173,7 @@ export default function PredictionCard({ prediction, animationDelay = 0 }: Props
       <LockedCard
         prediction={prediction}
         animationDelay={animationDelay}
-        onClickUnlock={() => setCountryModalOpen(true)}
+        onClickUnlock={() => setGhanaModalOpen(true)}
       />
 
       {/* Step 1 — Country selector */}
