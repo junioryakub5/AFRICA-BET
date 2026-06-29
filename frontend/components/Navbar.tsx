@@ -63,19 +63,7 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {/* Admin CTA pill */}
-            <Link
-              href="/portal"
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              style={{
-                background: "#D4A017",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(212,160,23,0.3)",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Admin
-            </Link>
+            {/* Admin CTA pill — hidden */}
           </div>
 
           {/* Mobile Toggle */}
@@ -115,21 +103,7 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <div className="pt-3 pb-1">
-            <Link
-              href="/portal"
-              onClick={() => setMobileOpen(false)}
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold tracking-wide transition-all duration-200"
-              style={{
-                background: "#D4A017",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(212,160,23,0.25)",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Admin
-            </Link>
-          </div>
+          {/* Admin CTA pill — hidden */}
         </div>
       </div>
     </nav>
