@@ -7,6 +7,7 @@ const crypto    = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const axios     = require('axios');
 const multer    = require('multer');
+const path      = require('path');
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 const app  = express();
@@ -80,15 +81,28 @@ const adminAuth = (req, res, next) => {
 
 // ─── Supabase (optional) ──────────────────────────────────────────────────────
 let supabase = null;
+const BUCKET = process.env.SUPABASE_BUCKET || 'africa-tips';
 if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
   const { createClient } = require('@supabase/supabase-js');
   supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   console.log('✅ Supabase connected');
+  // Ensure the storage bucket exists (creates it if missing)
+  (async () => {
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const exists = buckets && buckets.some(b => b.name === BUCKET);
+      if (!exists) {
+        const { error } = await supabase.storage.createBucket(BUCKET, { public: true });
+        if (error) console.error('⚠️  Could not create storage bucket:', error.message);
+        else console.log(`✅ Storage bucket '${BUCKET}' created`);
+      } else {
+        console.log(`✅ Storage bucket '${BUCKET}' ready`);
+      }
+    } catch (e) { console.error('⚠️  Bucket check failed:', e.message); }
+  })();
 } else {
   console.log('📦 Mode: In-Memory (add SUPABASE_URL + SUPABASE_SERVICE_KEY to .env)');
 }
-
-const BUCKET = process.env.SUPABASE_BUCKET || 'africa-tips';
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -318,12 +332,12 @@ app.post('/api/upload', adminAuth, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   if (!supabase) return res.status(503).json({ error: 'Supabase not configured — image uploads unavailable' });
   try {
-    const ext      = req.file.originalname.split('.').pop() || 'jpg';
+    const ext      = path.extname(req.file.originalname).replace('.', '') || 'jpg';
     const filename = `${uuidv4()}.${ext}`;
     const { error } = await supabase.storage.from(BUCKET).upload(filename, req.file.buffer, {
       contentType: req.file.mimetype, upsert: false,
     });
-    if (error) throw error;
+    if (error) return res.status(500).json({ error: `Supabase storage error: ${error.message}` });
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filename);
     res.json({ success: true, url: publicUrl });
   } catch (err) { safeError(res, 500, 'Image upload failed', err); }
