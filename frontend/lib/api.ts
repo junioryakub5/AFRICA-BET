@@ -68,16 +68,13 @@ function adminHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
-/** Upload a File directly to the backend — bypasses Vercel's 4.5 MB proxy body limit */
+/** Upload a File via the /api proxy (nginx allows up to 10 MB) */
 export async function adminUploadImage(token: string, file: File): Promise<string> {
   const formData = new FormData();
   formData.append("image", file);
 
-  // Use the direct backend URL for uploads — Vercel's /api proxy has a 4.5 MB body limit
-  // which silently kills multipart file uploads. We go direct to bypass it.
-  const directBase = process.env.NEXT_PUBLIC_API_URL || "/api";
-  const res = await axios.post<{ success: boolean; url: string }>(
-    `${directBase}/upload`,
+  const res = await api.post<{ success: boolean; url: string }>(
+    `/upload`,
     formData,
     {
       headers: { Authorization: `Bearer ${token}` }, // Do NOT set Content-Type — axios sets multipart boundary automatically

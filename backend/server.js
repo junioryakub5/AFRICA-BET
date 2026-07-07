@@ -88,7 +88,7 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
   console.log('📦 Mode: In-Memory (add SUPABASE_URL + SUPABASE_SERVICE_KEY to .env)');
 }
 
-const BUCKET = process.env.SUPABASE_BUCKET || 'kaana-tips';
+const BUCKET = process.env.SUPABASE_BUCKET || 'africa-tips';
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
