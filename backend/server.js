@@ -328,19 +328,18 @@ function stripSensitive(prediction) {
 }
 
 // ─── Routes: Image Upload ─────────────────────────────────────────────────────
-app.post('/api/upload', adminAuth, upload.single('image'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+// Returns a short-lived signed upload URL so the browser can PUT the file
+// directly to Supabase — bypasses the Vercel proxy (no size limits, no mixed-content).
+app.get('/api/upload/signed-url', adminAuth, async (req, res) => {
   if (!supabase) return res.status(503).json({ error: 'Supabase not configured — image uploads unavailable' });
   try {
-    const ext      = path.extname(req.file.originalname).replace('.', '') || 'jpg';
+    const ext      = (req.query.ext || 'jpg').toString().toLowerCase().replace(/[^a-z0-9]/g, '');
     const filename = `${uuidv4()}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(filename, req.file.buffer, {
-      contentType: req.file.mimetype, upsert: false,
-    });
-    if (error) return res.status(500).json({ error: `Supabase storage error: ${error.message}` });
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(filename);
+    if (error) return res.status(500).json({ error: `Could not create signed URL: ${error.message}` });
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(filename);
-    res.json({ success: true, url: publicUrl });
-  } catch (err) { safeError(res, 500, 'Image upload failed', err); }
+    res.json({ success: true, signedUrl: data.signedUrl, publicUrl });
+  } catch (err) { safeError(res, 500, 'Failed to generate upload URL', err); }
 });
 
 // ─── Routes: Public Predictions ───────────────────────────────────────────────

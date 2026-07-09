@@ -68,20 +68,24 @@ function adminHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
-/** Upload a File via the /api proxy (nginx allows up to 10 MB) */
+/** Upload a file directly to Supabase via a signed URL issued by the backend.
+ *  Step 1: ask backend for a signed upload URL (tiny GET, no proxy size issue).
+ *  Step 2: PUT the file straight to Supabase CDN (no Vercel proxy, no size limit). */
 export async function adminUploadImage(token: string, file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const res = await api.post<{ success: boolean; url: string }>(
-    `/upload`,
-    formData,
-    {
-      headers: { Authorization: `Bearer ${token}` }, // Do NOT set Content-Type — axios sets multipart boundary automatically
-      timeout: 60000,
-    }
+  // Step 1 — get signed URL from backend
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const { data } = await api.get<{ success: boolean; signedUrl: string; publicUrl: string }>(
+    `/upload/signed-url`,
+    { headers: { Authorization: `Bearer ${token}` }, params: { ext } }
   );
-  return res.data.url;
+
+  // Step 2 — PUT file directly to Supabase (browser → Supabase, bypasses Vercel proxy)
+  await axios.put(data.signedUrl, file, {
+    headers: { "Content-Type": file.type },
+    timeout: 120000,
+  });
+
+  return data.publicUrl;
 }
 
 export async function adminGetPredictions(token: string): Promise<Prediction[]> {
