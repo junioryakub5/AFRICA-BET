@@ -15,11 +15,10 @@ const nextConfig = {
         source: "/portal",
         destination: "/admin",
       },
-      // Proxy backend API calls through Vercel to avoid mixed-content (HTTP→HTTPS) issues.
-      // Browser calls /backend/api/* → Vercel server proxies to VPS http://72.60.23.133:8081/api/*
+      // Proxy /api/* server-side → Africa Tips backend on port 5005
       {
-        source: "/backend/:path*",
-        destination: "http://72.60.23.133:8081/:path*",
+        source: "/api/:path*",
+        destination: "http://72.60.23.133:5005/api/:path*",
       },
     ];
   },
