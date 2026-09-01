@@ -558,31 +558,51 @@ function OverviewSection({ token }: { token: string }) {
       </div>
 
       {/* Recent Payments */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: "#111117",
-          border: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <div
-          className="px-5 py-4"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          <h3 className="font-semibold" style={{ color: "#f4f4f5" }}>
-            Recent Payments
-          </h3>
+      <RecentPaymentsTable activity={stats.recentActivity} />
+
+      {/* Daily Revenue Breakdown */}
+      {(stats.dailyBreakdown ?? []).length > 0 && (
+        <DailyBreakdownTable
+          rows={stats.dailyBreakdown ?? []}
+          totalSales={stats.totalSales}
+          totalRevenue={stats.totalRevenue}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Recent Payments Table (paginated) ───────────────────────────────────────
+const PAYMENTS_PAGE_SIZE = 10;
+
+function RecentPaymentsTable({ activity }: { activity: RecentActivity[] }) {
+  const [page, setPage] = useState(1);
+  const pages = Math.ceil(activity.length / PAYMENTS_PAGE_SIZE);
+  const slice = activity.slice((page - 1) * PAYMENTS_PAGE_SIZE, page * PAYMENTS_PAGE_SIZE);
+
+  useEffect(() => { setPage(1); }, [activity]);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "#111117", border: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <h3 className="font-semibold" style={{ color: "#f4f4f5" }}>Recent Payments</h3>
+        {activity.length > 0 && (
+          <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
+            {activity.length} total
+          </span>
+        )}
+      </div>
+
+      {/* Rows */}
+      {activity.length === 0 ? (
+        <div className="py-12 text-center text-sm" style={{ color: "#52525b" }}>
+          No payment activity yet.
         </div>
-        {stats.recentActivity.length === 0 ? (
-          <div
-            className="py-12 text-center text-sm"
-            style={{ color: "#52525b" }}
-          >
-            No payment activity yet.
-          </div>
-        ) : (
+      ) : (
+        <>
           <div>
-            {stats.recentActivity.map((act) => (
+            {slice.map((act) => (
               <div
                 key={act._id}
                 className="flex items-center justify-between px-5 py-3.5 transition-colors"
@@ -593,47 +613,50 @@ function OverviewSection({ token }: { token: string }) {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{
-                      background: "rgba(212,160,23,0.12)",
-                      color: "#D4A017",
-                      border: "1px solid rgba(212,160,23,0.25)",
-                    }}
+                    style={{ background: "rgba(212,160,23,0.12)", color: "#D4A017", border: "1px solid rgba(212,160,23,0.25)" }}
                   >
                     {act.email[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: "#a1a1aa" }}>
-                      {act.email}
-                    </p>
-                    <p className="text-xs" style={{ color: "#52525b" }}>
-                      {act.predictionTitle}
-                    </p>
+                    <p className="text-sm font-medium" style={{ color: "#a1a1aa" }}>{act.email}</p>
+                    <p className="text-xs" style={{ color: "#52525b" }}>{act.predictionTitle}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: act.status === "success" ? "#10b981" : "#ef4444" }}
-                  >
+                  <p className="text-sm font-bold" style={{ color: act.status === "success" ? "#10b981" : "#ef4444" }}>
                     {act.currency} {act.amount}
                   </p>
-                  <p className="text-xs" style={{ color: "#52525b" }}>
-                    {act.status}
-                  </p>
+                  <p className="text-xs" style={{ color: "#52525b" }}>{act.status}</p>
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
 
-      {/* Daily Revenue Breakdown */}
-      {(stats.dailyBreakdown ?? []).length > 0 && (
-        <DailyBreakdownTable
-          rows={stats.dailyBreakdown ?? []}
-          totalSales={stats.totalSales}
-          totalRevenue={stats.totalRevenue}
-        />
+          {/* Pagination */}
+          {pages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                <ChevronLeft size={13} /> Prev
+              </button>
+              <span style={{ fontSize: "0.75rem", color: "#52525b", fontWeight: 600 }}>
+                Page {page} of {pages}
+              </span>
+              <button
+                onClick={() => setPage(p => Math.min(pages, p + 1))}
+                disabled={page >= pages}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-30"
+                style={{ background: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                Next <ChevronRight size={13} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

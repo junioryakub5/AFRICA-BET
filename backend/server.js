@@ -705,7 +705,7 @@ app.get('/api/admin/stats', adminAuth, async (req, res) => {
     const { total, active, completed, payments } = await db.stats({ dateFrom, dateTo });
     const totalRevenue = payments.reduce((s,p) => s+(p.amount||0), 0);
     const recentActivity = [...payments]
-      .sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,20)
+      .sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt))
       .map(p => ({ _id:p._id, email:p.email, predictionTitle:p.predictionTitle||'—',
         amount:p.amount, currency:p.currency||'GHS', status:p.status, createdAt:p.createdAt }));
 
