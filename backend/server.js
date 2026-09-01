@@ -327,7 +327,7 @@ const db = {
     const success = memPayments.filter(p => p.status==='success');
     return { data:success.slice((page-1)*limit, page*limit), total:success.length };
   },
-  async stats() {
+  async stats({ dateFrom, dateTo } = {}) {
     if (supabase) {
       const [{ count:total }, { count:active }, { count:completed }] = await Promise.all([
         supabase.from('predictions').select('*',{count:'exact',head:true}),
@@ -335,27 +335,32 @@ const db = {
         supabase.from('predictions').select('*',{count:'exact',head:true}).eq('status','completed'),
       ]);
 
-      // Paginate through ALL successful payments — bypasses Supabase's 1,000-row default cap
+      // Paginate through successful payments — with optional date range filter
       const PAGE = 1000;
       let allPayments = [];
-      let from = 0;
+      let offset = 0;
       while (true) {
-        const { data, error } = await supabase
+        let q = supabase
           .from('payments')
           .select('*')
           .eq('status', 'success')
           .order('created_at', { ascending: false })
-          .range(from, from + PAGE - 1);
+          .range(offset, offset + PAGE - 1);
+        if (dateFrom) q = q.gte('created_at', dateFrom);
+        if (dateTo)   q = q.lte('created_at', dateTo);
+        const { data, error } = await q;
         if (error) throw error;
         if (!data || data.length === 0) break;
         allPayments = allPayments.concat(data.map(toMoney));
         if (data.length < PAGE) break; // last page reached
-        from += PAGE;
+        offset += PAGE;
       }
 
       return { total, active, completed, payments: allPayments };
     }
-    const payments = memPayments.filter(p => p.status==='success');
+    let payments = memPayments.filter(p => p.status==='success');
+    if (dateFrom) payments = payments.filter(p => p.createdAt >= dateFrom);
+    if (dateTo)   payments = payments.filter(p => p.createdAt <= dateTo);
     return {
       total:memPredictions.length,
       active:memPredictions.filter(p=>p.status==='active').length,
@@ -696,15 +701,28 @@ app.get('/api/admin/payments', adminAuth, async (req, res) => {
 
 app.get('/api/admin/stats', adminAuth, async (req, res) => {
   try {
-    const { total, active, completed, payments } = await db.stats();
+    const { from: dateFrom, to: dateTo } = req.query;
+    const { total, active, completed, payments } = await db.stats({ dateFrom, dateTo });
     const totalRevenue = payments.reduce((s,p) => s+(p.amount||0), 0);
     const recentActivity = [...payments]
       .sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,20)
       .map(p => ({ _id:p._id, email:p.email, predictionTitle:p.predictionTitle||'—',
         amount:p.amount, currency:p.currency||'GHS', status:p.status, createdAt:p.createdAt }));
+
+    // Daily breakdown — group payments by date (YYYY-MM-DD), newest first
+    const dayMap = {};
+    for (const p of payments) {
+      const day = (p.createdAt || '').slice(0, 10);
+      if (!day) continue;
+      if (!dayMap[day]) dayMap[day] = { date: day, count: 0, revenue: 0 };
+      dayMap[day].count++;
+      dayMap[day].revenue += p.amount || 0;
+    }
+    const dailyBreakdown = Object.values(dayMap).sort((a, b) => b.date.localeCompare(a.date));
+
     res.json({ success:true, data:{
       totalSlips:total, activeSlips:active, completedSlips:completed,
-      totalRevenue, totalSales:payments.length, recentActivity,
+      totalRevenue, totalSales:payments.length, recentActivity, dailyBreakdown,
     }});
   } catch (err) { safeError(res, 500, 'Failed to load stats', err); }
 });

@@ -12,7 +12,7 @@ import {
   adminGetPredictions, adminCreatePrediction, adminUpdatePrediction,
   adminDeletePrediction, adminGetStats, adminGetPayments, adminUploadImage,
 } from "@/lib/api";
-import { Prediction, RecentActivity, PaymentRecord } from "@/lib/types";
+import { Prediction, RecentActivity, PaymentRecord, DailyRevenue } from "@/lib/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ODDS_CATEGORIES = ["2+ ODDS", "5+ ODDS", "10+ ODDS", "20+ ODDS"] as const;
@@ -337,17 +337,67 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   );
 }
 
+// ─── Date range helpers ───────────────────────────────────────────────────────
+type RangeKey = "today" | "yesterday" | "last7" | "month" | "all";
+
+function getRange(key: RangeKey): { from?: string; to?: string; label: string } {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  if (key === "today") {
+    const s = fmt(now) + "T00:00:00.000Z";
+    const e = fmt(now) + "T23:59:59.999Z";
+    return { from: s, to: e, label: "Today" };
+  }
+  if (key === "yesterday") {
+    const y = new Date(now);
+    y.setUTCDate(y.getUTCDate() - 1);
+    const s = fmt(y) + "T00:00:00.000Z";
+    const e = fmt(y) + "T23:59:59.999Z";
+    return { from: s, to: e, label: "Yesterday" };
+  }
+  if (key === "last7") {
+    const s7 = new Date(now);
+    s7.setUTCDate(s7.getUTCDate() - 6);
+    return { from: fmt(s7) + "T00:00:00.000Z", to: fmt(now) + "T23:59:59.999Z", label: "Last 7 Days" };
+  }
+  if (key === "month") {
+    const s = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01T00:00:00.000Z`;
+    return { from: s, to: fmt(now) + "T23:59:59.999Z", label: "This Month" };
+  }
+  return { label: "All Time" };
+}
+
+const RANGE_PILLS: { key: RangeKey; label: string }[] = [
+  { key: "today",     label: "Today" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "last7",     label: "Last 7 Days" },
+  { key: "month",     label: "This Month" },
+  { key: "all",       label: "All Time" },
+];
+
 // ─── Overview Section ─────────────────────────────────────────────────────────
 function OverviewSection({ token }: { token: string }) {
+  const [rangeKey, setRangeKey] = useState<RangeKey>("all");
   const [stats, setStats] = useState<{
     totalSlips: number; activeSlips: number; completedSlips: number;
     totalRevenue: number; totalSales: number; recentActivity: RecentActivity[];
+    dailyBreakdown: DailyRevenue[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminGetStats(token).then(setStats).catch(console.error).finally(() => setLoading(false));
-  }, [token]);
+    setLoading(true);
+    const { from, to } = getRange(rangeKey);
+    adminGetStats(token, { from, to })
+      .then(setStats)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [token, rangeKey]);
+
+  const activeRange = getRange(rangeKey);
 
   if (loading) return (
     <div className="flex items-center justify-center py-24">
@@ -363,12 +413,60 @@ function OverviewSection({ token }: { token: string }) {
   const statCards = [
     { label: "Total Predictions", value: stats.totalSlips, icon: FileText, iconColor: "#D4A017", iconBg: "rgba(212,160,23,0.1)", iconBorder: "rgba(212,160,23,0.2)" },
     { label: "Active Slips", value: stats.activeSlips, icon: Activity, iconColor: "#CC1500", iconBg: "rgba(204,21,0,0.1)", iconBorder: "rgba(204,21,0,0.2)" },
-    { label: "Total Revenue", value: `GHS ${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, iconColor: "#F5C030", iconBg: "rgba(245,192,48,0.1)", iconBorder: "rgba(245,192,48,0.2)" },
-    { label: "Win Rate", value: `${stats.totalSales > 0 ? Math.round((stats.completedSlips / stats.totalSlips) * 100) : 0}%`, icon: TrendingUp, iconColor: "#D4A017", iconBg: "rgba(212,160,23,0.1)", iconBorder: "rgba(212,160,23,0.2)" },
+    { label: "Revenue", value: `GHS ${stats.totalRevenue.toFixed(2)}`, icon: DollarSign, iconColor: "#F5C030", iconBg: "rgba(245,192,48,0.1)", iconBorder: "rgba(245,192,48,0.2)" },
+    { label: "Sales", value: stats.totalSales, icon: TrendingUp, iconColor: "#D4A017", iconBg: "rgba(212,160,23,0.1)", iconBorder: "rgba(212,160,23,0.2)" },
   ];
 
   return (
     <div className="space-y-6">
+      {/* Date Range Pills */}
+      <div
+        style={{
+          background: "rgba(17,17,23,0.8)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "16px",
+          padding: "1rem 1.25rem",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {RANGE_PILLS.map(({ key, label }) => {
+              const active = rangeKey === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setRangeKey(key)}
+                  style={{
+                    padding: "0.35rem 0.9rem",
+                    borderRadius: "999px",
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    fontFamily: "'Sora', sans-serif",
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    background: active
+                      ? "linear-gradient(135deg,#CC1500,#D4A017)"
+                      : "rgba(255,255,255,0.04)",
+                    color: active ? "#ffffff" : "#71717a",
+                    border: active ? "none" : "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: active ? "0 2px 12px rgba(212,160,23,0.35)" : "none",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
+            {activeRange.label}
+            {activeRange.from && (
+              <> &nbsp;·&nbsp; {activeRange.from.slice(0, 10)}{activeRange.to ? ` → ${activeRange.to.slice(0, 10)}` : ""}</>
+            )}
+          </span>
+        </div>
+      </div>
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {statCards.map((s) => (
@@ -424,6 +522,7 @@ function OverviewSection({ token }: { token: string }) {
               </div>
               <h3 style={{ color: "#f4f4f5", fontWeight: 700, fontSize: "0.9rem", fontFamily: "'Sora',sans-serif" }}>Ghana Payments</h3>
             </div>
+            <span style={{ fontSize: "0.7rem", color: "#52525b", fontWeight: 600 }}>{activeRange.label}</span>
           </div>
           <div className="flex justify-between text-sm mb-3">
             <span style={{ color: "#52525b" }}>Revenue</span>
@@ -527,9 +626,92 @@ function OverviewSection({ token }: { token: string }) {
           </div>
         )}
       </div>
+
+      {/* Daily Revenue Breakdown */}
+      {stats.dailyBreakdown.length > 0 && (
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ background: "#111117", border: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <div
+            className="px-5 py-4 flex items-center justify-between"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <h3 className="font-semibold" style={{ color: "#f4f4f5" }}>
+              Daily Revenue Breakdown
+            </h3>
+            <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
+              {stats.dailyBreakdown.length} day{stats.dailyBreakdown.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          {/* Table header */}
+          <div
+            className="grid px-5 py-2"
+            style={{
+              gridTemplateColumns: "1fr auto auto",
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              color: "#3f3f46",
+              textTransform: "uppercase",
+            }}
+          >
+            <span>Date</span>
+            <span style={{ textAlign: "center", minWidth: 60 }}>Sales</span>
+            <span style={{ textAlign: "right", minWidth: 110 }}>Revenue</span>
+          </div>
+          {/* Rows */}
+          <div>
+            {stats.dailyBreakdown.map((row, i) => (
+              <div
+                key={row.date}
+                className="grid px-5 py-3 transition-colors"
+                style={{
+                  gridTemplateColumns: "1fr auto auto",
+                  borderBottom: i < stats.dailyBreakdown.length - 1
+                    ? "1px solid rgba(255,255,255,0.04)"
+                    : "none",
+                  background: "transparent",
+                }}
+                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)")}
+                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+              >
+                <span style={{ color: "#a1a1aa", fontSize: "0.85rem", fontWeight: 500 }}>
+                  {row.date}
+                </span>
+                <span style={{ textAlign: "center", minWidth: 60, color: "#71717a", fontSize: "0.85rem", fontWeight: 600 }}>
+                  {row.count}
+                </span>
+                <span style={{ textAlign: "right", minWidth: 110, color: "#10b981", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
+                  GHS {row.revenue.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* Footer total */}
+          <div
+            className="grid px-5 py-3"
+            style={{
+              gridTemplateColumns: "1fr auto auto",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(255,255,255,0.02)",
+            }}
+          >
+            <span style={{ color: "#52525b", fontSize: "0.8rem", fontWeight: 700 }}>Total</span>
+            <span style={{ textAlign: "center", minWidth: 60, color: "#f4f4f5", fontSize: "0.8rem", fontWeight: 700 }}>
+              {stats.totalSales}
+            </span>
+            <span style={{ textAlign: "right", minWidth: 110, color: "#D4A017", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
+              GHS {stats.totalRevenue.toFixed(2)}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 // ─── Slip Form Modal ──────────────────────────────────────────────────────────
 function SlipModal({

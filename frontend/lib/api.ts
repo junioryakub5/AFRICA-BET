@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ApiResponse, Prediction, UnlockData, RecentActivity, PaymentRecord } from "./types";
+import { ApiResponse, Prediction, UnlockData, RecentActivity, PaymentRecord, DailyRevenue } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
@@ -120,15 +120,19 @@ export async function adminDeletePrediction(token: string, id: string): Promise<
   await api.delete(`/admin/predictions/${id}`, { headers: adminHeaders(token) });
 }
 
-export async function adminGetStats(token: string): Promise<{
+export async function adminGetStats(token: string, opts?: { from?: string; to?: string }): Promise<{
   totalSlips: number;
   activeSlips: number;
   completedSlips: number;
   totalRevenue: number;
   totalSales: number;
   recentActivity: RecentActivity[];
+  dailyBreakdown: DailyRevenue[];
 }> {
-  const res = await api.get("/admin/stats", { headers: adminHeaders(token) });
+  const params: Record<string, string> = {};
+  if (opts?.from) params.from = opts.from;
+  if (opts?.to)   params.to   = opts.to;
+  const res = await api.get("/admin/stats", { headers: adminHeaders(token), params });
   return res.data.data;
 }
 

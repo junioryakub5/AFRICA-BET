@@ -62,3 +62,9 @@ export interface PaymentRecord {
   expiresAt: string;
   createdAt: string;
 }
+
+export interface DailyRevenue {
+  date: string;
+  count: number;
+  revenue: number;
+}
