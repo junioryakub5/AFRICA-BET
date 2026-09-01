@@ -384,7 +384,7 @@ function OverviewSection({ token }: { token: string }) {
   const [stats, setStats] = useState<{
     totalSlips: number; activeSlips: number; completedSlips: number;
     totalRevenue: number; totalSales: number; recentActivity: RecentActivity[];
-    dailyBreakdown: DailyRevenue[];
+    dailyBreakdown: DailyRevenue[] | undefined;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -628,7 +628,7 @@ function OverviewSection({ token }: { token: string }) {
       </div>
 
       {/* Daily Revenue Breakdown */}
-      {stats.dailyBreakdown.length > 0 && (
+      {(stats.dailyBreakdown ?? []).length > 0 && (
         <div
           className="rounded-2xl overflow-hidden"
           style={{ background: "#111117", border: "1px solid rgba(255,255,255,0.06)" }}
@@ -641,7 +641,7 @@ function OverviewSection({ token }: { token: string }) {
               Daily Revenue Breakdown
             </h3>
             <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
-              {stats.dailyBreakdown.length} day{stats.dailyBreakdown.length !== 1 ? "s" : ""}
+              {(stats.dailyBreakdown ?? []).length} day{(stats.dailyBreakdown ?? []).length !== 1 ? "s" : ""}
             </span>
           </div>
           {/* Table header */}
@@ -663,13 +663,13 @@ function OverviewSection({ token }: { token: string }) {
           </div>
           {/* Rows */}
           <div>
-            {stats.dailyBreakdown.map((row, i) => (
+            {(stats.dailyBreakdown ?? []).map((row, i) => (
               <div
                 key={row.date}
                 className="grid px-5 py-3 transition-colors"
                 style={{
                   gridTemplateColumns: "1fr auto auto",
-                  borderBottom: i < stats.dailyBreakdown.length - 1
+                  borderBottom: i < (stats.dailyBreakdown ?? []).length - 1
                     ? "1px solid rgba(255,255,255,0.04)"
                     : "none",
                   background: "transparent",
