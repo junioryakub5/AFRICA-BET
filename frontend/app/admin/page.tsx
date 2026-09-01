@@ -629,88 +629,108 @@ function OverviewSection({ token }: { token: string }) {
 
       {/* Daily Revenue Breakdown */}
       {(stats.dailyBreakdown ?? []).length > 0 && (
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{ background: "#111117", border: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          <div
-            className="px-5 py-4 flex items-center justify-between"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            <h3 className="font-semibold" style={{ color: "#f4f4f5" }}>
-              Daily Revenue Breakdown
-            </h3>
-            <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
-              {(stats.dailyBreakdown ?? []).length} day{(stats.dailyBreakdown ?? []).length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          {/* Table header */}
-          <div
-            className="grid px-5 py-2"
-            style={{
-              gridTemplateColumns: "1fr auto auto",
-              borderBottom: "1px solid rgba(255,255,255,0.04)",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              color: "#3f3f46",
-              textTransform: "uppercase",
-            }}
-          >
-            <span>Date</span>
-            <span style={{ textAlign: "center", minWidth: 60 }}>Sales</span>
-            <span style={{ textAlign: "right", minWidth: 110 }}>Revenue</span>
-          </div>
-          {/* Rows */}
-          <div>
-            {(stats.dailyBreakdown ?? []).map((row, i) => (
-              <div
-                key={row.date}
-                className="grid px-5 py-3 transition-colors"
-                style={{
-                  gridTemplateColumns: "1fr auto auto",
-                  borderBottom: i < (stats.dailyBreakdown ?? []).length - 1
-                    ? "1px solid rgba(255,255,255,0.04)"
-                    : "none",
-                  background: "transparent",
-                }}
-                onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)")}
-                onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = "transparent")}
-              >
-                <span style={{ color: "#a1a1aa", fontSize: "0.85rem", fontWeight: 500 }}>
-                  {row.date}
-                </span>
-                <span style={{ textAlign: "center", minWidth: 60, color: "#71717a", fontSize: "0.85rem", fontWeight: 600 }}>
-                  {row.count}
-                </span>
-                <span style={{ textAlign: "right", minWidth: 110, color: "#10b981", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
-                  GHS {row.revenue.toFixed(2)}
-                </span>
-              </div>
-            ))}
-          </div>
-          {/* Footer total */}
-          <div
-            className="grid px-5 py-3"
-            style={{
-              gridTemplateColumns: "1fr auto auto",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.02)",
-            }}
-          >
-            <span style={{ color: "#52525b", fontSize: "0.8rem", fontWeight: 700 }}>Total</span>
-            <span style={{ textAlign: "center", minWidth: 60, color: "#f4f4f5", fontSize: "0.8rem", fontWeight: 700 }}>
-              {stats.totalSales}
-            </span>
-            <span style={{ textAlign: "right", minWidth: 110, color: "#D4A017", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>
-              GHS {stats.totalRevenue.toFixed(2)}
-            </span>
-          </div>
-        </div>
+        <DailyBreakdownTable
+          rows={stats.dailyBreakdown ?? []}
+          totalSales={stats.totalSales}
+          totalRevenue={stats.totalRevenue}
+        />
       )}
     </div>
   );
 }
+
+// ─── Daily Breakdown Table (paginated) ────────────────────────────────────────
+const DAILY_PAGE_SIZE = 10;
+
+function DailyBreakdownTable({
+  rows, totalSales, totalRevenue,
+}: {
+  rows: import("@/lib/types").DailyRevenue[];
+  totalSales: number;
+  totalRevenue: number;
+}) {
+  const [page, setPage] = useState(1);
+  const pages = Math.ceil(rows.length / DAILY_PAGE_SIZE);
+  const slice = rows.slice((page - 1) * DAILY_PAGE_SIZE, page * DAILY_PAGE_SIZE);
+
+  // Reset to page 1 if rows change (e.g. date range switch)
+  useEffect(() => { setPage(1); }, [rows]);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "#111117", border: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Header */}
+      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <h3 className="font-semibold" style={{ color: "#f4f4f5" }}>Daily Revenue Breakdown</h3>
+        <span style={{ fontSize: "0.72rem", color: "#52525b", fontWeight: 600 }}>
+          {rows.length} day{rows.length !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Column headers */}
+      <div
+        className="grid px-5 py-2"
+        style={{ gridTemplateColumns: "1fr auto auto", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.06em", color: "#3f3f46", textTransform: "uppercase" }}
+      >
+        <span>Date</span>
+        <span style={{ textAlign: "center", minWidth: 60 }}>Sales</span>
+        <span style={{ textAlign: "right", minWidth: 110 }}>Revenue</span>
+      </div>
+
+      {/* Rows */}
+      <div>
+        {slice.map((row, i) => (
+          <div
+            key={row.date}
+            className="grid px-5 py-3 transition-colors"
+            style={{ gridTemplateColumns: "1fr auto auto", borderBottom: i < slice.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", background: "transparent" }}
+            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)")}
+            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = "transparent")}
+          >
+            <span style={{ color: "#a1a1aa", fontSize: "0.85rem", fontWeight: 500 }}>{row.date}</span>
+            <span style={{ textAlign: "center", minWidth: 60, color: "#71717a", fontSize: "0.85rem", fontWeight: 600 }}>{row.count}</span>
+            <span style={{ textAlign: "right", minWidth: 110, color: "#10b981", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>GHS {row.revenue.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {pages > 1 && (
+        <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-30"
+            style={{ background: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            <ChevronLeft size={13} /> Prev
+          </button>
+          <span style={{ fontSize: "0.75rem", color: "#52525b", fontWeight: 600 }}>
+            Page {page} of {pages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(pages, p + 1))}
+            disabled={page >= pages}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-30"
+            style={{ background: "rgba(255,255,255,0.04)", color: "#a1a1aa", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            Next <ChevronRight size={13} />
+          </button>
+        </div>
+      )}
+
+      {/* Footer total */}
+      <div
+        className="grid px-5 py-3"
+        style={{ gridTemplateColumns: "1fr auto auto", borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+      >
+        <span style={{ color: "#52525b", fontSize: "0.8rem", fontWeight: 700 }}>Total</span>
+        <span style={{ textAlign: "center", minWidth: 60, color: "#f4f4f5", fontSize: "0.8rem", fontWeight: 700 }}>{totalSales}</span>
+        <span style={{ textAlign: "right", minWidth: 110, color: "#D4A017", fontSize: "0.85rem", fontWeight: 800, fontFamily: "'Sora',sans-serif" }}>GHS {totalRevenue.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+}
+
 
 
 // ─── Slip Form Modal ──────────────────────────────────────────────────────────
